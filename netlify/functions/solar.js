@@ -17,7 +17,7 @@ exports.handler = async function(event, context) {
         // REPLACE THESE WITH YOUR ACTUAL CREDENTIALS BEFORE DEPLOYING
         const VALID_USER = "admin";       
         const VALID_PASS = "solar123";    
-        const API_TOKEN = "REPLACE_WITH_YOUR_REAL_TOKEN"; 
+        const API_TOKEN = "709y2mp8451cylc04cq77bw2g83t006l"; 
         const BASE_V1 = "https://openapi.growatt.com/v1";
         const BASE_V4 = "https://openapi.growatt.com/v4/new-api";
         // ------------------------------------------
