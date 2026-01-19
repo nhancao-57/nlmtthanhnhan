@@ -16,7 +16,7 @@ exports.handler = async function(event, context) {
         // --- 🔒 CONFIGURATION 🔒 ---
         const VALID_USER = "admin";       
         const VALID_PASS = "solar123";    
-        const API_TOKEN = "YOUR_FIXED_TOKEN_HERE"; // <--- PASTE YOUR TOKEN HERE
+        const API_TOKEN = "709y2mp8451cylc04cq77bw2g83t006l"; // <--- PASTE YOUR TOKEN HERE
         // ---------------------------
 
         if (username !== VALID_USER || password !== VALID_PASS) {
