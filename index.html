@@ -3,63 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solar Monitor</title>
+    <title>Solar Plant Control Panel</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; max-width: 500px; margin: 0 auto; background: #f0f2f5; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #218838; }
-        pre { background: #eee; padding: 10px; overflow-x: auto; font-size: 12px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f8; color: #333; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 600px; }
+        
+        /* Card Styling */
+        .card { background: white; border-radius: 16px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); overflow: hidden; margin-bottom: 20px; padding: 24px; }
+        
+        h2 { margin-top: 0; font-size: 1.25rem; color: #1a202c; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }
+        
+        /* Grid for Stats */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .stat-item { text-align: center; padding: 15px; background: #f7fafc; border-radius: 10px; }
+        .stat-label { font-size: 0.85rem; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+        .stat-value { font-size: 1.5rem; font-weight: 700; color: #2d3748; }
+        .unit { font-size: 0.9rem; color: #a0aec0; font-weight: normal; }
+        
+        /* Status Badge */
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 99px; font-size: 0.8rem; font-weight: 600; margin-bottom: 15px; }
+        .status-online { background-color: #c6f6d5; color: #22543d; }
+        .status-offline { background-color: #fed7d7; color: #822727; }
+
+        /* Form Elements */
+        input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; font-size: 1rem; }
+        button { width: 100%; background-color: #3182ce; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        button:hover { background-color: #2b6cb0; }
+        
+        .raw-data { margin-top: 20px; background: #2d3748; color: #a0aec0; padding: 15px; border-radius: 8px; font-size: 12px; overflow-x: auto; display: none; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2>☀️ Solar Status</h2>
-    
-    <input type="text" id="api-token" placeholder="Paste your Fixed Token here">
-    <button onclick="getData()">Load Data</button>
+<div class="container">
+    <div class="card" id="config-card">
+        <h2>⚙️ Configuration</h2>
+        <input type="text" id="api-token" placeholder="Enter your Fixed Token">
+        <button onclick="fetchSolarData()">Connect & Refresh</button>
+    </div>
 
-    <div id="results" style="margin-top: 20px;"></div>
+    <div class="card" id="dashboard-card" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="border: none; margin: 0;">Rooftop Solar Plant</h2>
+            <span id="status-badge" class="status-badge status-offline">Checking...</span>
+        </div>
+        
+        <p style="color: #718096; font-size: 0.9rem; margin-top: 5px;">ID: <span id="plant-id">--</span> | <span id="plant-country">--</span></p>
+
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-label">Current Power</div>
+                <div class="stat-value"><span id="power-now">--</span> <span class="unit">W</span></div>
+            </div>
+
+            <div class="stat-item">
+                <div class="stat-label">Total Energy</div>
+                <div class="stat-value"><span id="energy-total">--</span> <span class="unit">kWh</span></div>
+            </div>
+            
+            <div class="stat-item">
+                <div class="stat-label">Today</div>
+                <div class="stat-value"><span id="energy-today">--</span> <span class="unit">kWh</span></div>
+            </div>
+
+            <div class="stat-item">
+                <div class="stat-label">Trees Saved</div>
+                <div class="stat-value"><span id="trees-saved">--</span> <span class="unit">🌲</span></div>
+            </div>
+        </div>
+
+        <button onclick="toggleRaw()" style="margin-top: 20px; background: #edf2f7; color: #4a5568;">Toggle Raw Data</button>
+        <pre id="raw-output" class="raw-data"></pre>
+    </div>
 </div>
 
 <script>
-    async function getData() {
+    async function fetchSolarData() {
         const token = document.getElementById('api-token').value;
-        const resultDiv = document.getElementById('results');
-        
-        if(!token) {
-            alert("Please enter a token");
-            return;
-        }
+        if (!token) return alert("Please enter your token first.");
 
-        resultDiv.innerHTML = "Loading...";
+        const btn = document.querySelector('button');
+        btn.innerText = "Loading...";
 
         try {
-            // We use the direct path to be safe
             const response = await fetch('/.netlify/functions/solar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ token: token })
             });
 
-            // CHECK: Is the response actually JSON?
-            const contentType = response.headers.get("content-type");
-            if (!contentType || !contentType.includes("application/json")) {
-                const text = await response.text();
-                throw new Error("Received HTML instead of JSON. Check your netlify.toml or function path.\n\nRaw response:\n" + text.substring(0, 100) + "...");
+            // We trust the response is JSON because your last error proved it was!
+            const data = await response.json();
+
+            // RENDER THE DATA
+            // Based on your error log, the structure is data.data.plants[0]
+            if (data && data.data && data.data.plants && data.data.plants.length > 0) {
+                const plant = data.data.plants[0];
+
+                document.getElementById('config-card').style.display = 'none';
+                document.getElementById('dashboard-card').style.display = 'block';
+
+                // Fill in the fields
+                document.getElementById('plant-id').innerText = plant.plant_id || "N/A";
+                document.getElementById('plant-country').innerText = plant.country || "N/A";
+                document.getElementById('energy-total').innerText = plant.total_energy || "0";
+                
+                // These keys might be different. I check common variations:
+                // 'pac' is common for current power. 'today_energy' for daily.
+                // If these show "--", check the 'Raw Data' section to see the real names.
+                document.getElementById('power-now').innerText = plant.current_power || plant.pac || "--"; 
+                document.getElementById('energy-today').innerText = plant.today_energy || plant.e_today || "--";
+                
+                // Status Logic (Simple check if power > 0)
+                const currentPower = parseFloat(plant.current_power || plant.pac || 0);
+                const badge = document.getElementById('status-badge');
+                if (currentPower > 0) {
+                    badge.innerText = "Online ⚡";
+                    badge.className = "status-badge status-online";
+                } else {
+                    badge.innerText = "Offline / Night 🌙";
+                    badge.className = "status-badge status-offline";
+                }
+
+                // Debugging: Show full data
+                document.getElementById('raw-output').innerText = JSON.stringify(data, null, 2);
+            } else {
+                alert("Connected, but no plant data found in response.");
             }
 
-            const data = await response.json();
-            
-            // Display the raw JSON so we can find the right variable names (pac, power, etc)
-            resultDiv.innerHTML = "<strong>Success! Raw Data:</strong><br><pre>" + JSON.stringify(data, null, 2) + "</pre>";
-
         } catch (err) {
-            console.error(err);
-            resultDiv.innerHTML = `<span style="color:red">Error: ${err.message}</span>`;
+            alert("Error: " + err.message);
+        } finally {
+            btn.innerText = "Connect & Refresh";
         }
+    }
+
+    function toggleRaw() {
+        const raw = document.getElementById('raw-output');
+        raw.style.display = raw.style.display === 'none' ? 'block' : 'none';
     }
 </script>
 
