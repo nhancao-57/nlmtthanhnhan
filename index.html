@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VTNN Thành Nhân - Solar Monitor</title>
+    <title>VTNN Thành Nhân - Solar SCADA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -11,7 +11,7 @@
                 extend: {
                     colors: {
                         brand: { DEFAULT: '#059669', dark: '#047857', light: '#d1fae5' },
-                        solar: { yellow: '#fbbf24', orange: '#f59e0b' }
+                        solar: { yellow: '#fbbf24', orange: '#f59e0b', red: '#ef4444' }
                     },
                     animation: { 'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite' }
                 }
@@ -20,205 +20,331 @@
     </script>
     <style>
         .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
-        .fade-in { animation: fadeIn 0.6s ease-out forwards; opacity: 0; }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; opacity: 0; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Modal Transition */
+        .modal { transition: opacity 0.25s ease; }
+        .modal-active { overflow-y: hidden; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen font-sans text-gray-800 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
 
-    <header class="bg-white shadow-sm sticky top-0 z-50 border-b border-brand">
+    <header class="bg-white shadow-sm sticky top-0 z-40 border-b border-brand">
         <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-            <div class="flex items-center gap-3 cursor-pointer select-none" onclick="triggerDebug()">
+            <div class="flex items-center gap-3">
                 <div class="bg-brand text-white p-2 rounded-lg">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                 </div>
                 <div>
                     <h1 class="font-bold text-xl text-gray-800 leading-tight">VTNN Thành Nhân</h1>
-                    <p class="text-xs text-brand-dark font-medium tracking-wide">SOLAR CONTROL SYSTEM</p>
+                    <p class="text-xs text-brand-dark font-medium tracking-wide">SCADA MONITOR v2.0</p>
                 </div>
             </div>
-            
             <div class="flex items-center gap-4">
-                <button onclick="toggleLang()" class="text-sm font-semibold text-gray-500 hover:text-brand transition" id="lang-btn">EN / VN</button>
-                <button onclick="logout()" id="btn-logout" class="hidden text-sm bg-red-50 text-red-600 px-3 py-1.5 rounded hover:bg-red-100 transition">
-                    <span data-key="logout">Logout</span>
-                </button>
+                <button onclick="logout()" id="btn-logout" class="hidden text-sm text-red-600 font-bold hover:text-red-800 transition">LOGOUT</button>
             </div>
         </div>
     </header>
 
-    <main class="max-w-6xl mx-auto p-6">
-
-        <div id="debug-panel" class="hidden mb-6 p-4 bg-gray-800 text-green-400 text-xs font-mono rounded overflow-x-auto whitespace-pre-wrap"></div>
+    <main class="max-w-6xl mx-auto p-6 relative">
 
         <div id="login-view" class="max-w-md mx-auto mt-10 glass-panel p-8 rounded-2xl shadow-xl border border-gray-200 fade-in">
             <div class="text-center mb-8">
-                <h2 class="text-2xl font-bold text-brand-dark" data-key="loginTitle">System Login</h2>
-                <p class="text-gray-500 text-sm mt-2" data-key="loginSub">Secure Access Required</p>
+                <h2 class="text-2xl font-bold text-brand-dark">System Access</h2>
+                <p class="text-gray-500 text-sm mt-2">Authorized Personnel Only</p>
             </div>
             <div class="space-y-5">
                 <input type="text" id="username" placeholder="Username" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand outline-none transition">
                 <input type="password" id="password" placeholder="Password" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand outline-none transition">
-                <div id="error-msg" class="text-red-500 text-sm bg-red-50 p-3 rounded hidden"></div>
-                <button onclick="login()" id="btn-login" class="w-full bg-brand hover:bg-brand-dark text-white font-bold py-3.5 rounded-lg shadow-lg transition transform hover:-translate-y-0.5" data-key="loginBtn">Access Dashboard</button>
+                <button onclick="performAction('login')" id="btn-login" class="w-full bg-brand hover:bg-brand-dark text-white font-bold py-3.5 rounded-lg shadow-lg transition">Login</button>
             </div>
         </div>
 
         <div id="dashboard-view" class="hidden space-y-8">
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 fade-in delay-100">
-                <div class="bg-white rounded-2xl p-6 shadow-sm border-l-4 border-solar-yellow relative overflow-hidden">
-                    <p class="text-sm font-bold text-gray-400 uppercase tracking-wider" data-key="currentPower">Current Power</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 fade-in">
+                <div class="bg-white rounded-2xl p-6 shadow-sm border-l-4 border-solar-yellow">
+                    <p class="text-sm font-bold text-gray-400 uppercase tracking-wider">Total Power</p>
                     <div class="mt-2 flex items-baseline gap-2">
-                        <span id="val-power" class="text-4xl font-extrabold text-gray-800">--</span>
+                        <span id="dash-power" class="text-4xl font-extrabold text-gray-800">--</span>
                         <span class="text-lg text-gray-500 font-medium">W</span>
                     </div>
-                    <div id="status-dot" class="mt-4 flex items-center text-sm font-medium text-gray-400">
-                        <span class="w-2 h-2 rounded-full bg-gray-300 mr-2"></span> <span id="status-text">Offline</span>
-                    </div>
                 </div>
-
-                <div class="bg-white rounded-2xl p-6 shadow-sm border-l-4 border-brand relative overflow-hidden">
-                    <p class="text-sm font-bold text-gray-400 uppercase tracking-wider" data-key="todayEnergy">Energy Today</p>
+                <div class="bg-white rounded-2xl p-6 shadow-sm border-l-4 border-brand">
+                    <p class="text-sm font-bold text-gray-400 uppercase tracking-wider">Today Production</p>
                     <div class="mt-2 flex items-baseline gap-2">
-                        <span id="val-today" class="text-4xl font-extrabold text-gray-800">--</span>
+                        <span id="dash-today" class="text-4xl font-extrabold text-gray-800">--</span>
                         <span class="text-lg text-gray-500 font-medium">kWh</span>
                     </div>
-                    <div class="mt-4 text-sm text-green-600 font-medium bg-green-50 inline-block px-2 py-1 rounded">🌱 Eco-friendly</div>
                 </div>
-
-                <div class="bg-white rounded-2xl p-6 shadow-sm border-l-4 border-blue-500 relative overflow-hidden">
-                    <p class="text-sm font-bold text-gray-400 uppercase tracking-wider" data-key="totalEnergy">Lifetime Energy</p>
-                    <div class="mt-2 flex items-baseline gap-2">
-                        <span id="val-total" class="text-4xl font-extrabold text-gray-800">--</span>
-                        <span class="text-lg text-gray-500 font-medium">kWh</span>
+                <div class="bg-white rounded-2xl p-6 shadow-sm border-l-4 border-blue-500">
+                    <p class="text-sm font-bold text-gray-400 uppercase tracking-wider">Plant Status</p>
+                    <div class="mt-3 flex items-center gap-3">
+                        <span id="dash-status-dot" class="w-4 h-4 rounded-full bg-gray-300"></span>
+                        <span id="dash-status-text" class="text-xl font-bold text-gray-600">Unknown</span>
                     </div>
-                    <p class="mt-4 text-xs text-gray-400" id="plant-name-display">--</p>
                 </div>
             </div>
 
-            <div class="fade-in">
-                <h3 class="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
-                    <span data-key="deviceList">Connected Devices</span>
-                    <span id="device-count" class="bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded-full">0</span>
-                </h3>
+            <div class="fade-in delay-100">
+                <h3 class="text-lg font-bold text-gray-700 mb-4">Inverter Units</h3>
                 <div id="device-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
             </div>
-            
         </div>
+
     </main>
 
+    <div id="detail-modal" class="fixed inset-0 z-50 hidden opacity-0 pointer-events-none modal">
+        <div class="absolute inset-0 bg-black bg-opacity-50 transition-opacity" onclick="closeModal()"></div>
+        
+        <div class="absolute inset-y-0 right-0 max-w-lg w-full bg-gray-50 shadow-2xl transform transition-transform duration-300 translate-x-full" id="modal-panel">
+            <div class="h-full flex flex-col">
+                <div class="bg-white p-6 border-b border-gray-200 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800" id="modal-title">Device Details</h2>
+                        <p class="text-xs text-gray-500 font-mono" id="modal-sn">SN: --</p>
+                    </div>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                    
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                        <h3 class="text-xs font-bold text-gray-400 uppercase mb-3">Live Input (PV)</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-yellow-50 p-3 rounded-lg">
+                                <p class="text-xs text-yellow-700 font-bold">PV String 1</p>
+                                <p class="text-lg font-mono font-bold text-gray-800"><span id="val-vpv1">--</span> V</p>
+                                <p class="text-sm text-gray-500"><span id="val-ipv1">--</span> A</p>
+                            </div>
+                            <div class="bg-yellow-50 p-3 rounded-lg">
+                                <p class="text-xs text-yellow-700 font-bold">PV String 2</p>
+                                <p class="text-lg font-mono font-bold text-gray-800"><span id="val-vpv2">--</span> V</p>
+                                <p class="text-sm text-gray-500"><span id="val-ipv2">--</span> A</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                        <h3 class="text-xs font-bold text-gray-400 uppercase mb-3">Output & Grid</h3>
+                        <div class="grid grid-cols-2 gap-y-4 text-sm">
+                            <div class="text-gray-500">AC Voltage (R)</div>
+                            <div class="text-right font-mono font-bold text-gray-800"><span id="val-vacr">--</span> V</div>
+                            
+                            <div class="text-gray-500">AC Frequency</div>
+                            <div class="text-right font-mono font-bold text-gray-800"><span id="val-fac">--</span> Hz</div>
+                            
+                            <div class="text-gray-500">Internal Temp</div>
+                            <div class="text-right font-mono font-bold text-red-500"><span id="val-temp">--</span> °C</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-800 rounded-xl p-5 text-white shadow-lg">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-yellow-400 flex items-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                                Remote Control
+                            </h3>
+                            <span class="text-[10px] bg-red-600 px-2 py-0.5 rounded text-white font-bold">ADMIN</span>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-xs text-gray-400 block mb-2">Active Power Limit (%)</label>
+                                <div class="flex gap-2">
+                                    <input type="number" id="ctrl-power-val" value="100" min="0" max="100" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white font-mono text-center">
+                                    <button onclick="sendControl('power')" class="bg-brand hover:bg-brand-dark px-4 rounded font-bold transition">Set</button>
+                                </div>
+                            </div>
+                            
+                            <div class="pt-4 border-t border-gray-700 flex justify-between items-center">
+                                <span class="text-xs text-gray-400">Emergency Stop</span>
+                                <div class="flex gap-2">
+                                    <button onclick="sendControl('switch', 'off')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs font-bold">SHUTDOWN</button>
+                                    <button onclick="sendControl('switch', 'on')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-xs font-bold">TURN ON</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // --- TRANSLATION ---
-        let lang = 'vi';
-        const texts = {
-            vi: { loginTitle: 'Hệ Thống Năng Lượng', loginSub: 'VTNN Thành Nhân - Yêu cầu đăng nhập', loginBtn: 'Truy cập hệ thống', currentPower: 'Công suất hiện tại', todayEnergy: 'Sản lượng hôm nay', totalEnergy: 'Tổng sản lượng', deviceList: 'Danh sách thiết bị', online: 'Đang hoạt động', offline: 'Đã ngắt kết nối', logout: 'Đăng xuất', loading: 'Đang tải...' },
-            en: { loginTitle: 'Solar System', loginSub: 'VTNN Thanh Nhan - Login Required', loginBtn: 'Access Dashboard', currentPower: 'Current Power', todayEnergy: 'Energy Today', totalEnergy: 'Lifetime Energy', deviceList: 'Device Inventory', online: 'Online', offline: 'Offline', logout: 'Logout', loading: 'Loading...' }
-        };
+        let currentUser = null;
+        let currentPass = null;
+        let activeDeviceSn = null;
 
-        function updateLang() { document.querySelectorAll('[data-key]').forEach(el => el.innerText = texts[lang][el.dataset.key]); }
-        function toggleLang() { lang = lang === 'vi' ? 'en' : 'vi'; updateLang(); }
-
-        // --- DEBUG FUNCTION ---
-        let clickCount = 0;
-        function triggerDebug() {
-            clickCount++;
-            if (clickCount >= 5) {
-                document.getElementById('debug-panel').classList.remove('hidden');
-                clickCount = 0;
-            }
-        }
-
-        // --- MAIN LOGIC ---
-        async function login() {
-            const user = document.getElementById('username').value;
-            const pass = document.getElementById('password').value;
+        // --- CORE FUNCTIONS ---
+        async function performAction(action, extraData = {}) {
+            const user = currentUser || document.getElementById('username').value;
+            const pass = currentPass || document.getElementById('password').value;
+            
+            // Basic UI Loading State
             const btn = document.getElementById('btn-login');
-            
-            btn.innerText = texts[lang].loading;
-            
+            if(action === 'login' && btn) btn.innerText = "Loading...";
+
             try {
+                const payload = { 
+                    username: user, 
+                    password: pass, 
+                    action: action === 'login' ? 'dashboard' : action,
+                    ...extraData
+                };
+
                 const res = await fetch('/.netlify/functions/solar', {
                     method: 'POST',
-                    body: JSON.stringify({ username: user, password: pass })
+                    body: JSON.stringify(payload)
                 });
+                
                 const json = await res.json();
                 
-                if (!json.success && !json.data) throw new Error(json.error || "Login Failed");
-                
-                // Show RAW JSON in Debug Panel just in case
-                document.getElementById('debug-panel').innerText = JSON.stringify(json.data, null, 2);
-                
-                renderDashboard(json.data);
+                if (!json.success && !json.data) throw new Error(json.error || "Operation Failed");
+
+                if (action === 'login') {
+                    currentUser = user; currentPass = pass;
+                    renderDashboard(json.data);
+                }
+                return json;
 
             } catch (err) {
                 alert(err.message);
-                btn.innerText = texts[lang].loginBtn;
+                if(action === 'login' && btn) btn.innerText = "Login";
+                return null;
             }
         }
 
+        // --- DASHBOARD RENDERER ---
         function renderDashboard(data) {
             document.getElementById('login-view').classList.add('hidden');
             document.getElementById('dashboard-view').classList.remove('hidden');
             document.getElementById('btn-logout').classList.remove('hidden');
 
-            const plant = data.raw_plant || {};
-
-            // --- 1. SMART MAPPING (HUNT FOR DATA) ---
-            // Look for power in all common keys
-            const powerW = parseFloat(plant.pac || plant.current_power || plant.power || plant.ppv || 0);
+            const plant = data.plant || {};
             
-            // Look for Today's Energy in all common keys
-            const eToday = parseFloat(plant.e_today || plant.today_energy || plant.epv_today || plant.energy_today || plant.etoday || 0);
-            
-            // Look for Total Energy
-            const eTotal = parseFloat(plant.total_energy || plant.e_total || plant.etotal || 0);
+            // Smart safe parsing
+            const pNow = parseFloat(plant.current_power || plant.pac || 0);
+            const pToday = parseFloat(plant.today_energy || plant.e_today || 0);
 
-            // --- 2. RENDER VALUES ---
-            document.getElementById('val-power').innerText = powerW.toLocaleString();
-            document.getElementById('val-today').innerText = eToday.toFixed(1);
-            document.getElementById('val-total').innerText = eTotal.toFixed(0);
-            document.getElementById('plant-name-display').innerText = plant.plant_name || plant.name || "Solar Plant";
+            document.getElementById('dash-power').innerText = pNow.toLocaleString();
+            document.getElementById('dash-today').innerText = pToday.toFixed(1);
 
-            // --- 3. FIX STATUS CONTRADICTION ---
-            // If Power > 0, FORCE status to ONLINE
-            const statusDot = document.getElementById('status-dot').querySelector('span');
-            const statusText = document.getElementById('status-text');
+            const statusText = document.getElementById('dash-status-text');
+            const statusDot = document.getElementById('dash-status-dot');
             
-            if (powerW > 0) {
-                statusDot.className = "w-3 h-3 rounded-full bg-green-500 animate-pulse-slow mr-2 shadow-[0_0_10px_rgba(16,185,129,0.5)]";
-                statusText.innerText = texts[lang].online;
-                statusText.className = "text-brand font-bold";
+            if (pNow > 0) {
+                statusText.innerText = "Generating";
+                statusText.classList.add("text-brand");
+                statusDot.classList.add("bg-green-500", "animate-pulse-slow");
             } else {
-                statusDot.className = "w-3 h-3 rounded-full bg-gray-400 mr-2";
-                statusText.innerText = texts[lang].offline;
-                statusText.className = "text-gray-400 font-medium";
+                statusText.innerText = "Standby/Offline";
+                statusText.classList.remove("text-brand");
+                statusDot.classList.remove("bg-green-500", "animate-pulse-slow");
             }
 
-            // --- 4. RENDER DEVICES ---
+            // Render Devices
             const grid = document.getElementById('device-grid');
             grid.innerHTML = '';
             const devices = data.devices || [];
-            document.getElementById('device-count').innerText = devices.length;
 
             devices.forEach(dev => {
-                const isInv = (dev.deviceType === 'inv' || dev.deviceType === 'max');
-                const icon = isInv ? '⚡' : '📡';
+                // Using Example 1 keys (nominalPower) or Example 2 keys (pac)
+                const power = dev.power || dev.pac || 0;
+                const sn = dev.serialNum || dev.deviceSn || "Unknown SN";
+                const fw = dev.fwVersion || "--";
+                
                 const card = `
-                    <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex items-center gap-4">
-                        <div class="p-3 bg-gray-50 rounded-lg text-xl">${icon}</div>
-                        <div>
-                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">${isInv ? 'Inverter' : 'Device'}</p>
-                            <p class="text-sm font-bold text-gray-800 font-mono">${dev.deviceSn}</p>
-                            <p class="text-xs text-gray-400 mt-1">${dev.createDate || ''}</p>
+                    <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer group" onclick="openDetail('${sn}')">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="p-3 bg-blue-50 text-blue-600 rounded-lg group-hover:bg-brand group-hover:text-white transition">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            </div>
+                            <span class="text-xs font-bold ${power > 0 ? 'text-green-500 bg-green-50' : 'text-gray-400 bg-gray-100'} px-2 py-1 rounded">
+                                ${power > 0 ? 'ONLINE' : 'SLEEP'}
+                            </span>
                         </div>
-                    </div>`;
+                        <h4 class="font-bold text-gray-800 text-lg">${sn}</h4>
+                        <div class="flex justify-between mt-4 text-sm text-gray-500">
+                            <span>Power: <b class="text-gray-800">${power} W</b></span>
+                            <span>FW: ${fw}</span>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-gray-100 text-center text-brand font-bold text-xs uppercase tracking-wide opacity-0 group-hover:opacity-100 transition">
+                            View Telemetry &rarr;
+                        </div>
+                    </div>
+                `;
                 grid.innerHTML += card;
             });
         }
-        
+
+        // --- DETAIL MODAL LOGIC ---
+        async function openDetail(sn) {
+            activeDeviceSn = sn;
+            document.getElementById('detail-modal').classList.remove('hidden', 'pointer-events-none');
+            // Trigger animation
+            setTimeout(() => {
+                document.getElementById('detail-modal').classList.remove('opacity-0');
+                document.getElementById('modal-panel').classList.remove('translate-x-full');
+            }, 10);
+            
+            document.getElementById('modal-title').innerText = "Loading Data...";
+            document.getElementById('modal-sn').innerText = sn;
+
+            // Fetch Live Data
+            const res = await performAction('detail', { deviceSn: sn });
+            
+            if (res && res.data) {
+                // Support structure from Example 2 (datas array or direct object)
+                const d = Array.isArray(res.data.datas) ? res.data.datas[0] : res.data;
+                
+                document.getElementById('modal-title').innerText = d.alias || "Inverter Status";
+                
+                // Map fields from Example 2
+                updateVal('val-vpv1', d.vpv1);
+                updateVal('val-ipv1', d.ipv1);
+                updateVal('val-vpv2', d.vpv2);
+                updateVal('val-ipv2', d.ipv2);
+                updateVal('val-vacr', d.vacr);
+                updateVal('val-fac', d.fac);
+                updateVal('val-temp', d.temperature);
+            }
+        }
+
+        function updateVal(id, val) {
+            const el = document.getElementById(id);
+            if (el) el.innerText = (val !== undefined && val !== null) ? val : '--';
+        }
+
+        function closeModal() {
+            document.getElementById('modal-panel').classList.add('translate-x-full');
+            document.getElementById('detail-modal').classList.add('opacity-0');
+            setTimeout(() => {
+                document.getElementById('detail-modal').classList.add('hidden', 'pointer-events-none');
+            }, 300);
+        }
+
+        async function sendControl(type, valOverride) {
+            if (!confirm("⚠️ WARNING: Changing inverter settings remotely. Proceed?")) return;
+            
+            let val = valOverride;
+            if (type === 'power') val = document.getElementById('ctrl-power-val').value;
+
+            const res = await performAction('control', { 
+                deviceSn: activeDeviceSn,
+                command: { type: type, value: val }
+            });
+
+            if (res && res.success) {
+                alert("Command Sent Successfully! Status: " + res.api_response.message);
+            } else {
+                alert("Command Failed.");
+            }
+        }
+
         function logout() { location.reload(); }
-        updateLang();
     </script>
 </body>
 </html>
