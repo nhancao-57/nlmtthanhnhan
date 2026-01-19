@@ -25,7 +25,7 @@ exports.handler = async function(event, context) {
         const VALID_PASS = "solar123";    
         
         // 2. Set your Growatt Fixed Token
-        const API_TOKEN = "YOUR_FIXED_TOKEN_HERE"; 
+        const API_TOKEN = "709y2mp8451cylc04cq77bw2g83t006l"; 
 
         // -----------------------------------
 
