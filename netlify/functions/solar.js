@@ -20,16 +20,16 @@ exports.handler = async function(event, context) {
 
         // --- 🔒 CONFIGURATION SECTION 🔒 ---
         
-        // 1. Set your Login Credentials
-        const VALID_USER = "admin";       // Change this!
-        const VALID_PASS = "ThanhNhan@1967";    // Change this!
+        // 1. Set your Login Credentials (for the website login)
+        const VALID_USER = "admin";       
+        const VALID_PASS = "solar123";    
         
-        // 2. Set your Growatt Token
-        const API_TOKEN = "709y2mp8451cylc04cq77bw2g83t006l"; 
+        // 2. Set your Growatt Fixed Token
+        const API_TOKEN = "YOUR_FIXED_TOKEN_HERE"; 
 
         // -----------------------------------
 
-        // Step 1: Check Credentials
+        // Step 1: Check Website Credentials
         if (username !== VALID_USER || password !== VALID_PASS) {
             return {
                 statusCode: 401,
@@ -38,21 +38,36 @@ exports.handler = async function(event, context) {
             };
         }
 
-        // Step 2: Fetch Data from Growatt (Only happens if password is correct)
-        const GROWATT_URL = "https://openapi.growatt.com/v1/plant/list"; 
+        // Step 2: Prepare the Growatt V4 Request
+        const GROWATT_URL = "https://openapi.growatt.com/v4/new-api/queryDeviceList"; 
+
+        // IMPORTANT: V4 requires 'application/x-www-form-urlencoded'
+        // We use URLSearchParams to format the body correctly
+        const params = new URLSearchParams();
+        params.append('page', '1');
+        params.append('pagesize', '50'); // Get up to 50 devices
 
         const response = await fetch(GROWATT_URL, {
-            method: 'GET',
-            headers: { 'token': API_TOKEN }
+            method: 'POST',
+            headers: { 
+                'token': API_TOKEN, // Token goes in Header
+                'Content-Type': 'application/x-www-form-urlencoded' 
+            },
+            body: params // Body is sent as form data
         });
 
+        const rawText = await response.text();
+        
+        // Debugging: If it fails, we want to see exactly what Growatt said
         if (!response.ok) {
-            return { statusCode: response.status, headers, body: `Growatt Error: ${response.statusText}` };
+            console.log("Growatt Error:", rawText);
+            return { statusCode: response.status, headers, body: `Growatt API Error: ${rawText}` };
         }
 
-        const data = await response.json();
+        // Parse the JSON response
+        const data = JSON.parse(rawText);
 
-        // Step 3: Return Data
+        // Step 3: Return Data to Frontend
         return {
             statusCode: 200,
             headers,
@@ -60,6 +75,7 @@ exports.handler = async function(event, context) {
         };
 
     } catch (error) {
+        console.error(error);
         return {
             statusCode: 500,
             headers,
