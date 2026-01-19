@@ -1,10 +1,7 @@
 [build]
-  publish = "/"
   functions = "netlify/functions"
 
-# This is a rewrite rule. 
-# It makes your function accessible at /api/solar instead of the long .netlify path
 [[redirects]]
-  from = "/api/solar"
-  to = "/.netlify/functions/solar"
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
   status = 200

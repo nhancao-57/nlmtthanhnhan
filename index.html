@@ -3,112 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solar Control Panel</title>
+    <title>Solar Monitor</title>
     <style>
-        body { font-family: -apple-system, system-ui, sans-serif; padding: 2rem; max-width: 600px; margin: 0 auto; background: #f4f4f9; }
-        .card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        input { display: block; width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;}
-        button { background: #00bf63; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; width: 100%; font-size: 1rem; }
-        button:hover { background: #009e52; }
-        .hidden { display: none; }
-        .stat { font-size: 2rem; font-weight: bold; color: #333; }
-        .label { color: #666; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+        body { font-family: sans-serif; padding: 20px; max-width: 500px; margin: 0 auto; background: #f0f2f5; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #218838; }
+        pre { background: #eee; padding: 10px; overflow-x: auto; font-size: 12px; }
     </style>
 </head>
 <body>
 
-    <div id="login-section" class="card">
-        <h2>🌞 Solar Login</h2>
-        <form id="login-form">
-            <input type="text" id="username" placeholder="Growatt Username" required>
-            <input type="password" id="password" placeholder="Password" required>
-            <button type="submit" id="btn-login">Login</button>
-        </form>
-        <p id="error-msg" style="color: red; display: none; text-align: center; margin-top: 10px;"></p>
-    </div>
+<div class="card">
+    <h2>☀️ Solar Status</h2>
+    
+    <input type="text" id="api-token" placeholder="Paste your Fixed Token here">
+    <button onclick="getData()">Load Data</button>
 
-    <div id="dashboard-section" class="card hidden">
-        <h2>Plant Overview</h2>
-        <div style="margin-top: 20px;">
-            <div class="label">Current Power</div>
-            <div class="stat"><span id="current-power">--</span> kW</div>
-        </div>
-        <div style="margin-top: 20px;">
-            <div class="label">Total Energy Today</div>
-            <div class="stat"><span id="daily-energy">--</span> kWh</div>
-        </div>
-        <button onclick="logout()" style="background: #666; margin-top: 30px;">Logout</button>
-    </div>
+    <div id="results" style="margin-top: 20px;"></div>
+</div>
 
-    <script>
-        const API_ENDPOINT = '/.netlify/functions/solar';
-        let sessionToken = null;
+<script>
+    async function getData() {
+        const token = document.getElementById('api-token').value;
+        const resultDiv = document.getElementById('results');
+        
+        if(!token) {
+            alert("Please enter a token");
+            return;
+        }
 
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('btn-login');
-            const errorMsg = document.getElementById('error-msg');
-            
-            btn.innerText = 'Connecting...';
-            errorMsg.style.display = 'none';
+        resultDiv.innerHTML = "Loading...";
 
-            const user = document.getElementById('username').value;
-            const pass = document.getElementById('password').value;
+        try {
+            // We use the direct path to be safe
+            const response = await fetch('/.netlify/functions/solar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: token })
+            });
 
-            try {
-                // 1. Call our Netlify Function to Login
-                const response = await fetch(API_ENDPOINT, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'login', user, pass })
-                });
-                
-                const data = await response.json();
-
-                if (data.success) {
-                    sessionToken = data.token; // Store token from backend
-                    showDashboard();
-                    fetchPlantData();
-                } else {
-                    throw new Error(data.message || 'Login failed');
-                }
-            } catch (err) {
-                errorMsg.innerText = err.message;
-                errorMsg.style.display = 'block';
-            } finally {
-                btn.innerText = 'Login';
+            // CHECK: Is the response actually JSON?
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                const text = await response.text();
+                throw new Error("Received HTML instead of JSON. Check your netlify.toml or function path.\n\nRaw response:\n" + text.substring(0, 100) + "...");
             }
-        });
 
-        async function fetchPlantData() {
-            if (!sessionToken) return;
+            const data = await response.json();
             
-            try {
-                // 2. Call Netlify Function to get Data (using the token)
-                const response = await fetch(API_ENDPOINT, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'getData', token: sessionToken })
-                });
-                const data = await response.json();
-                
-                if (data.success) {
-                    // Update UI with real data
-                    document.getElementById('current-power').innerText = data.power;
-                    document.getElementById('daily-energy').innerText = data.today;
-                }
-            } catch (err) {
-                console.error("Failed to fetch data", err);
-            }
-        }
+            // Display the raw JSON so we can find the right variable names (pac, power, etc)
+            resultDiv.innerHTML = "<strong>Success! Raw Data:</strong><br><pre>" + JSON.stringify(data, null, 2) + "</pre>";
 
-        function showDashboard() {
-            document.getElementById('login-section').classList.add('hidden');
-            document.getElementById('dashboard-section').classList.remove('hidden');
+        } catch (err) {
+            console.error(err);
+            resultDiv.innerHTML = `<span style="color:red">Error: ${err.message}</span>`;
         }
+    }
+</script>
 
-        function logout() {
-            sessionToken = null;
-            location.reload();
-        }
-    </script>
 </body>
 </html>
