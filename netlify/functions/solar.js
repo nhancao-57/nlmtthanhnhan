@@ -1,5 +1,3 @@
-// solar.js
-const fetch = require('node-fetch'); // Ensure node-fetch is installed in your Netlify function environment
 
 exports.handler = async function(event, context) {
     const headers = {
