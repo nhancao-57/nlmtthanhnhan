@@ -22,16 +22,13 @@
         .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
         .fade-in { animation: fadeIn 0.6s ease-out forwards; opacity: 0; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .delay-100 { animation-delay: 100ms; }
-        .delay-200 { animation-delay: 200ms; }
-        .delay-300 { animation-delay: 300ms; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen font-sans text-gray-800 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
 
     <header class="bg-white shadow-sm sticky top-0 z-50 border-b border-brand">
         <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3 cursor-pointer select-none" onclick="triggerDebug()">
                 <div class="bg-brand text-white p-2 rounded-lg">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                 </div>
@@ -52,38 +49,25 @@
 
     <main class="max-w-6xl mx-auto p-6">
 
+        <div id="debug-panel" class="hidden mb-6 p-4 bg-gray-800 text-green-400 text-xs font-mono rounded overflow-x-auto whitespace-pre-wrap"></div>
+
         <div id="login-view" class="max-w-md mx-auto mt-10 glass-panel p-8 rounded-2xl shadow-xl border border-gray-200 fade-in">
             <div class="text-center mb-8">
                 <h2 class="text-2xl font-bold text-brand-dark" data-key="loginTitle">System Login</h2>
                 <p class="text-gray-500 text-sm mt-2" data-key="loginSub">Secure Access Required</p>
             </div>
-            
             <div class="space-y-5">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1" data-key="user">Username</label>
-                    <input type="text" id="username" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand focus:border-transparent outline-none transition">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1" data-key="pass">Password</label>
-                    <input type="password" id="password" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand focus:border-transparent outline-none transition">
-                </div>
-                
+                <input type="text" id="username" placeholder="Username" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand outline-none transition">
+                <input type="password" id="password" placeholder="Password" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand outline-none transition">
                 <div id="error-msg" class="text-red-500 text-sm bg-red-50 p-3 rounded hidden"></div>
-
-                <button onclick="login()" id="btn-login" class="w-full bg-brand hover:bg-brand-dark text-white font-bold py-3.5 rounded-lg shadow-lg hover:shadow-xl transition transform hover:-translate-y-0.5" data-key="loginBtn">
-                    Access Dashboard
-                </button>
+                <button onclick="login()" id="btn-login" class="w-full bg-brand hover:bg-brand-dark text-white font-bold py-3.5 rounded-lg shadow-lg transition transform hover:-translate-y-0.5" data-key="loginBtn">Access Dashboard</button>
             </div>
         </div>
 
         <div id="dashboard-view" class="hidden space-y-8">
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 fade-in delay-100">
-                
                 <div class="bg-white rounded-2xl p-6 shadow-sm border-l-4 border-solar-yellow relative overflow-hidden">
-                    <div class="absolute right-0 top-0 p-4 opacity-10">
-                        <svg class="w-24 h-24" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                    </div>
                     <p class="text-sm font-bold text-gray-400 uppercase tracking-wider" data-key="currentPower">Current Power</p>
                     <div class="mt-2 flex items-baseline gap-2">
                         <span id="val-power" class="text-4xl font-extrabold text-gray-800">--</span>
@@ -100,9 +84,7 @@
                         <span id="val-today" class="text-4xl font-extrabold text-gray-800">--</span>
                         <span class="text-lg text-gray-500 font-medium">kWh</span>
                     </div>
-                    <div class="mt-4 text-sm text-green-600 font-medium bg-green-50 inline-block px-2 py-1 rounded">
-                        🌱 Eco-friendly
-                    </div>
+                    <div class="mt-4 text-sm text-green-600 font-medium bg-green-50 inline-block px-2 py-1 rounded">🌱 Eco-friendly</div>
                 </div>
 
                 <div class="bg-white rounded-2xl p-6 shadow-sm border-l-4 border-blue-500 relative overflow-hidden">
@@ -115,69 +97,36 @@
                 </div>
             </div>
 
-            <div class="fade-in delay-200">
+            <div class="fade-in">
                 <h3 class="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                     <span data-key="deviceList">Connected Devices</span>
                     <span id="device-count" class="bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded-full">0</span>
                 </h3>
-
-                <div id="device-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    </div>
+                <div id="device-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
             </div>
             
         </div>
     </main>
 
     <script>
-        // --- CONFIG & TRANSLATION ---
+        // --- TRANSLATION ---
         let lang = 'vi';
         const texts = {
-            vi: {
-                loginTitle: 'Hệ Thống Năng Lượng',
-                loginSub: 'VTNN Thành Nhân - Yêu cầu đăng nhập',
-                user: 'Tên đăng nhập',
-                pass: 'Mật khẩu',
-                loginBtn: 'Truy cập hệ thống',
-                logout: 'Đăng xuất',
-                currentPower: 'Công suất hiện tại',
-                todayEnergy: 'Sản lượng hôm nay',
-                totalEnergy: 'Tổng sản lượng',
-                deviceList: 'Danh sách thiết bị',
-                online: 'Đang hoạt động',
-                offline: 'Đã ngắt kết nối',
-                inverter: 'Biến tần (Inverter)',
-                logger: 'Bộ ghi dữ liệu',
-                loading: 'Đang tải dữ liệu...'
-            },
-            en: {
-                loginTitle: 'Solar System',
-                loginSub: 'VTNN Thanh Nhan - Login Required',
-                user: 'Username',
-                pass: 'Password',
-                loginBtn: 'Access Dashboard',
-                logout: 'Logout',
-                currentPower: 'Current Power',
-                todayEnergy: 'Energy Today',
-                totalEnergy: 'Lifetime Energy',
-                deviceList: 'Device Inventory',
-                online: 'Online',
-                offline: 'Offline',
-                inverter: 'Inverter',
-                logger: 'Data Logger',
-                loading: 'Loading data...'
-            }
+            vi: { loginTitle: 'Hệ Thống Năng Lượng', loginSub: 'VTNN Thành Nhân - Yêu cầu đăng nhập', loginBtn: 'Truy cập hệ thống', currentPower: 'Công suất hiện tại', todayEnergy: 'Sản lượng hôm nay', totalEnergy: 'Tổng sản lượng', deviceList: 'Danh sách thiết bị', online: 'Đang hoạt động', offline: 'Đã ngắt kết nối', logout: 'Đăng xuất', loading: 'Đang tải...' },
+            en: { loginTitle: 'Solar System', loginSub: 'VTNN Thanh Nhan - Login Required', loginBtn: 'Access Dashboard', currentPower: 'Current Power', todayEnergy: 'Energy Today', totalEnergy: 'Lifetime Energy', deviceList: 'Device Inventory', online: 'Online', offline: 'Offline', logout: 'Logout', loading: 'Loading...' }
         };
 
-        function updateLang() {
-            document.querySelectorAll('[data-key]').forEach(el => {
-                el.innerText = texts[lang][el.dataset.key];
-            });
-        }
-        
-        function toggleLang() {
-            lang = lang === 'vi' ? 'en' : 'vi';
-            updateLang();
+        function updateLang() { document.querySelectorAll('[data-key]').forEach(el => el.innerText = texts[lang][el.dataset.key]); }
+        function toggleLang() { lang = lang === 'vi' ? 'en' : 'vi'; updateLang(); }
+
+        // --- DEBUG FUNCTION ---
+        let clickCount = 0;
+        function triggerDebug() {
+            clickCount++;
+            if (clickCount >= 5) {
+                document.getElementById('debug-panel').classList.remove('hidden');
+                clickCount = 0;
+            }
         }
 
         // --- MAIN LOGIC ---
@@ -185,100 +134,90 @@
             const user = document.getElementById('username').value;
             const pass = document.getElementById('password').value;
             const btn = document.getElementById('btn-login');
-            const errDiv = document.getElementById('error-msg');
-
+            
             btn.innerText = texts[lang].loading;
-            btn.disabled = true;
-            errDiv.classList.add('hidden');
-
+            
             try {
-                // Call Backend
                 const res = await fetch('/.netlify/functions/solar', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username: user, password: pass })
                 });
-                
                 const json = await res.json();
-
+                
                 if (!json.success && !json.data) throw new Error(json.error || "Login Failed");
-
+                
+                // Show RAW JSON in Debug Panel just in case
+                document.getElementById('debug-panel').innerText = JSON.stringify(json.data, null, 2);
+                
                 renderDashboard(json.data);
 
             } catch (err) {
-                errDiv.innerText = err.message;
-                errDiv.classList.remove('hidden');
+                alert(err.message);
                 btn.innerText = texts[lang].loginBtn;
-                btn.disabled = false;
             }
         }
 
         function renderDashboard(data) {
-            // 1. Hide Login, Show Dash
             document.getElementById('login-view').classList.add('hidden');
             document.getElementById('dashboard-view').classList.remove('hidden');
             document.getElementById('btn-logout').classList.remove('hidden');
-            
-            // 2. Render Summary (V1 Data)
-            if(data.summary) {
-                const s = data.summary;
-                
-                // Animate Numbers
-                document.getElementById('val-power').innerText = s.currentPower.toLocaleString();
-                document.getElementById('val-today').innerText = parseFloat(s.dailyEnergy).toFixed(1);
-                document.getElementById('val-total').innerText = parseFloat(s.totalEnergy).toFixed(0);
-                document.getElementById('plant-name-display').innerText = s.name;
 
-                // Status Indicator
-                const statusDot = document.getElementById('status-dot').querySelector('span');
-                const statusText = document.getElementById('status-text');
-                
-                if(s.status === 'online') {
-                    statusDot.className = "w-3 h-3 rounded-full bg-green-500 animate-pulse-slow mr-2 shadow-[0_0_10px_rgba(16,185,129,0.5)]";
-                    statusText.innerText = texts[lang].online;
-                    statusText.className = "text-brand font-bold";
-                } else {
-                    statusDot.className = "w-3 h-3 rounded-full bg-gray-400 mr-2";
-                    statusText.innerText = texts[lang].offline;
-                }
+            const plant = data.raw_plant || {};
+
+            // --- 1. SMART MAPPING (HUNT FOR DATA) ---
+            // Look for power in all common keys
+            const powerW = parseFloat(plant.pac || plant.current_power || plant.power || plant.ppv || 0);
+            
+            // Look for Today's Energy in all common keys
+            const eToday = parseFloat(plant.e_today || plant.today_energy || plant.epv_today || plant.energy_today || plant.etoday || 0);
+            
+            // Look for Total Energy
+            const eTotal = parseFloat(plant.total_energy || plant.e_total || plant.etotal || 0);
+
+            // --- 2. RENDER VALUES ---
+            document.getElementById('val-power').innerText = powerW.toLocaleString();
+            document.getElementById('val-today').innerText = eToday.toFixed(1);
+            document.getElementById('val-total').innerText = eTotal.toFixed(0);
+            document.getElementById('plant-name-display').innerText = plant.plant_name || plant.name || "Solar Plant";
+
+            // --- 3. FIX STATUS CONTRADICTION ---
+            // If Power > 0, FORCE status to ONLINE
+            const statusDot = document.getElementById('status-dot').querySelector('span');
+            const statusText = document.getElementById('status-text');
+            
+            if (powerW > 0) {
+                statusDot.className = "w-3 h-3 rounded-full bg-green-500 animate-pulse-slow mr-2 shadow-[0_0_10px_rgba(16,185,129,0.5)]";
+                statusText.innerText = texts[lang].online;
+                statusText.className = "text-brand font-bold";
+            } else {
+                statusDot.className = "w-3 h-3 rounded-full bg-gray-400 mr-2";
+                statusText.innerText = texts[lang].offline;
+                statusText.className = "text-gray-400 font-medium";
             }
 
-            // 3. Render Devices (V4 Data)
+            // --- 4. RENDER DEVICES ---
             const grid = document.getElementById('device-grid');
             grid.innerHTML = '';
-            
-            if(data.devices && data.devices.length > 0) {
-                document.getElementById('device-count').innerText = data.devices.length;
+            const devices = data.devices || [];
+            document.getElementById('device-count').innerText = devices.length;
 
-                data.devices.forEach(dev => {
-                    const isInv = (dev.deviceType === 'inv' || dev.deviceType === 'max');
-                    const label = isInv ? texts[lang].inverter : texts[lang].logger;
-                    const icon = isInv ? 
-                        '<svg class="w-6 h-6 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>' : 
-                        '<svg class="w-6 h-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/></svg>';
-
-                    const card = `
-                        <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition flex items-center gap-4 group">
-                            <div class="p-3 bg-gray-50 rounded-lg group-hover:bg-brand-light transition">
-                                ${icon}
-                            </div>
-                            <div class="overflow-hidden">
-                                <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">${label}</p>
-                                <p class="text-sm font-bold text-gray-800 font-mono truncate">${dev.deviceSn}</p>
-                                <p class="text-xs text-gray-400 mt-1 truncate">Added: ${dev.createDate.split(' ')[0]}</p>
-                            </div>
+            devices.forEach(dev => {
+                const isInv = (dev.deviceType === 'inv' || dev.deviceType === 'max');
+                const icon = isInv ? '⚡' : '📡';
+                const card = `
+                    <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex items-center gap-4">
+                        <div class="p-3 bg-gray-50 rounded-lg text-xl">${icon}</div>
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">${isInv ? 'Inverter' : 'Device'}</p>
+                            <p class="text-sm font-bold text-gray-800 font-mono">${dev.deviceSn}</p>
+                            <p class="text-xs text-gray-400 mt-1">${dev.createDate || ''}</p>
                         </div>
-                    `;
-                    grid.innerHTML += card;
-                });
-            } else {
-                grid.innerHTML = '<p class="text-gray-400 text-sm italic col-span-3">No devices found in V4 Record.</p>';
-            }
+                    </div>`;
+                grid.innerHTML += card;
+            });
         }
-
-        function logout() { location.reload(); }
         
-        // Initialize
+        function logout() { location.reload(); }
         updateLang();
     </script>
 </body>
