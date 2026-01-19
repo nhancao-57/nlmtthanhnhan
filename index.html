@@ -1,288 +1,114 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Thành Nhân Power Control</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-            mono: ['JetBrains Mono', 'monospace'], // For numbers/data
-          },
-          colors: {
-            // Electric Blue / Cyan Palette
-            energy: {
-              950: '#081c29', 
-              900: '#0c2e42', 
-              800: '#155e75', 
-              500: '#06b6d4', // Cyan
-              400: '#22d3ee', // Bright Cyan
-            }
-          }
-        }
-      }
-    }
-  </script>
-
-  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
-
-  <style>
-    /* Smooth fade for text transitions */
-    .fade-text { transition: opacity 0.2s ease; }
-    .opacity-0-force { opacity: 0; }
-    
-    /* Digital Glow Effect for numbers */
-    .glow-text {
-      text-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar Control Panel</title>
+    <style>
+        body { font-family: -apple-system, system-ui, sans-serif; padding: 2rem; max-width: 600px; margin: 0 auto; background: #f4f4f9; }
+        .card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        input { display: block; width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;}
+        button { background: #00bf63; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; width: 100%; font-size: 1rem; }
+        button:hover { background: #009e52; }
+        .hidden { display: none; }
+        .stat { font-size: 2rem; font-weight: bold; color: #333; }
+        .label { color: #666; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+    </style>
 </head>
+<body>
 
-<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center relative overflow-hidden">
-
-  <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-900 via-cyan-500 to-cyan-900 opacity-50"></div>
-  <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none"></div>
-
-  <div class="absolute top-6 right-6 z-20">
-    <button 
-      onclick="toggleLanguage()"
-      class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-700 hover:border-cyan-500/50 hover:bg-slate-800 transition group"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-400 group-hover:text-cyan-400 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-      </svg>
-      <span id="langLabel" class="text-xs font-bold text-cyan-400 font-mono">EN</span>
-    </button>
-  </div>
-
-  <div class="w-full max-w-md rounded-2xl bg-slate-900/90 backdrop-blur-xl border border-slate-800 shadow-2xl p-8 space-y-8 relative z-10">
-
-    <div class="text-center space-y-1">
-      <div class="flex justify-center mb-4">
-        <div class="p-3 bg-cyan-950/50 rounded-full border border-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.15)]">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-cyan-400" viewBox="0 0 24 24" fill="currentColor">
-            <path fill-rule="evenodd" d="M14.615 1.595a.75.75 0 01.359.852L12.982 9.75h7.268a.75.75 0 01.548 1.262l-10.5 11.25a.75.75 0 01-1.272-.71l1.992-7.302H3.75a.75.75 0 01-.548-1.262l10.5-11.25a.75.75 0 01.913-.143z" clip-rule="evenodd" />
-          </svg>
-        </div>
-      </div>
-      <h1 class="text-xl font-bold tracking-wider uppercase text-white" data-i18n="title">
-        Thành Nhân Power
-      </h1>
-      <p class="text-xs text-slate-400 font-mono uppercase tracking-widest" data-i18n="subtitle">
-        System Control Unit
-      </p>
+    <div id="login-section" class="card">
+        <h2>🌞 Solar Login</h2>
+        <form id="login-form">
+            <input type="text" id="username" placeholder="Growatt Username" required>
+            <input type="password" id="password" placeholder="Password" required>
+            <button type="submit" id="btn-login">Login</button>
+        </form>
+        <p id="error-msg" style="color: red; display: none; text-align: center; margin-top: 10px;"></p>
     </div>
 
-    <div id="login" class="text-center pt-2">
-      <button
-        onclick="netlifyIdentity.open()"
-        class="w-full py-3 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold transition shadow-[0_0_20px_rgba(8,145,178,0.4)] hover:shadow-[0_0_25px_rgba(34,211,238,0.6)]"
-        data-i18n="btn_login"
-      >
-        Authenticate
-      </button>
-      <p class="mt-4 text-[10px] text-slate-500 uppercase" data-i18n="secure_msg">
-        Restricted Access Area
-      </p>
+    <div id="dashboard-section" class="card hidden">
+        <h2>Plant Overview</h2>
+        <div style="margin-top: 20px;">
+            <div class="label">Current Power</div>
+            <div class="stat"><span id="current-power">--</span> kW</div>
+        </div>
+        <div style="margin-top: 20px;">
+            <div class="label">Total Energy Today</div>
+            <div class="stat"><span id="daily-energy">--</span> kWh</div>
+        </div>
+        <button onclick="logout()" style="background: #666; margin-top: 30px;">Logout</button>
     </div>
 
-    <div id="dashboard" class="hidden space-y-6">
+    <script>
+        const API_ENDPOINT = '/.netlify/functions/solar';
+        let sessionToken = null;
 
-      <div class="rounded-xl bg-slate-950 border border-slate-800 p-6 space-y-4 shadow-inner relative overflow-hidden">
-        <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-5"></div>
-        
-        <div class="flex items-center justify-between relative z-10">
-          <span class="text-xs font-mono text-slate-400 uppercase" data-i18n="lbl_status">System State</span>
-          <span id="stateBadge" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-800 text-slate-400 border border-slate-700">
-            OFFLINE
-          </span>
-        </div>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-login');
+            const errorMsg = document.getElementById('error-msg');
+            
+            btn.innerText = 'Connecting...';
+            errorMsg.style.display = 'none';
 
-        <div class="relative z-10">
-          <div class="text-[10px] text-cyan-500/80 mb-1 font-mono uppercase" data-i18n="lbl_output">Real-time Output</div>
-          <div class="flex items-baseline gap-3">
-            <span id="power" class="text-5xl font-mono font-medium text-white glow-text">0.00</span>
-            <span class="text-xl font-mono text-slate-500">MW</span>
-          </div>
-        </div>
-      </div>
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
 
-      <div class="grid grid-cols-2 gap-4">
-        <button
-          onclick="loadStatus()"
-          class="py-2.5 rounded-lg border border-slate-700 bg-slate-800/50 hover:bg-slate-700 hover:border-cyan-500/30 text-cyan-400 transition flex items-center justify-center gap-2 group"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          <span class="text-sm font-medium" data-i18n="btn_refresh">Sync Data</span>
-        </button>
-        <button
-          onclick="logout()"
-          class="py-2.5 rounded-lg border border-slate-700 bg-slate-800/50 hover:bg-red-900/20 hover:border-red-900/50 text-slate-400 hover:text-red-400 transition flex items-center justify-center gap-2"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-          </svg>
-          <span class="text-sm font-medium" data-i18n="btn_logout">Terminate</span>
-        </button>
-      </div>
+            try {
+                // 1. Call our Netlify Function to Login
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'login', user, pass })
+                });
+                
+                const data = await response.json();
 
-      <div class="flex justify-center gap-2 items-center opacity-50">
-        <div class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-        <p class="text-[10px] text-slate-500 font-mono" data-i18n="footer">SECURE CONNECTION ACTIVE</p>
-      </div>
-    </div>
+                if (data.success) {
+                    sessionToken = data.token; // Store token from backend
+                    showDashboard();
+                    fetchPlantData();
+                } else {
+                    throw new Error(data.message || 'Login failed');
+                }
+            } catch (err) {
+                errorMsg.innerText = err.message;
+                errorMsg.style.display = 'block';
+            } finally {
+                btn.innerText = 'Login';
+            }
+        });
 
-  </div>
-
-  <script>
-    // --- 1. LANGUAGE & TRANSLATION LOGIC ---
-    
-    const resources = {
-      en: {
-        toggle_label: "VI", // What to show on button to switch
-        title: "Thanh Nhan Power",
-        subtitle: "System Control Unit",
-        btn_login: "Authenticate Access",
-        secure_msg: "Restricted Access Area",
-        lbl_status: "System State",
-        lbl_output: "Real-time Output",
-        btn_refresh: "Sync Data",
-        btn_logout: "Terminate",
-        footer: "SECURE CONNECTION ACTIVE",
-        // Status Mappings
-        state_running: "RUNNING",
-        state_stopped: "STOPPED",
-        state_warning: "WARNING"
-      },
-      vi: {
-        toggle_label: "EN",
-        title: "Điện Lực Thành Nhân",
-        subtitle: "Bộ Điều Khiển Trung Tâm",
-        btn_login: "Đăng Nhập Hệ Thống",
-        secure_msg: "Khu Vực Hạn Chế Truy Cập",
-        lbl_status: "Trạng Thái Hệ Thống",
-        lbl_output: "Công Suất Thực",
-        btn_refresh: "Cập Nhật",
-        btn_logout: "Thoát",
-        footer: "KẾT NỐI BẢO MẬT",
-        // Status Mappings
-        state_running: "ĐANG CHẠY",
-        state_stopped: "ĐÃ DỪNG",
-        state_warning: "CẢNH BÁO"
-      }
-    };
-
-    let currentLang = 'en'; // Default
-    let lastKnownState = null; // Store state to re-translate on toggle
-
-    function toggleLanguage() {
-      currentLang = currentLang === 'en' ? 'vi' : 'en';
-      applyLanguage();
-    }
-
-    function applyLanguage() {
-      const texts = resources[currentLang];
-      
-      // Update Button Label
-      document.getElementById('langLabel').textContent = texts.toggle_label;
-
-      // Update UI Text elements
-      document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (texts[key]) {
-          el.classList.add('opacity-0-force'); // Fade out
-          setTimeout(() => {
-            el.textContent = texts[key];
-            el.classList.remove('opacity-0-force'); // Fade in
-          }, 200);
+        async function fetchPlantData() {
+            if (!sessionToken) return;
+            
+            try {
+                // 2. Call Netlify Function to get Data (using the token)
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'getData', token: sessionToken })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update UI with real data
+                    document.getElementById('current-power').innerText = data.power;
+                    document.getElementById('daily-energy').innerText = data.today;
+                }
+            } catch (err) {
+                console.error("Failed to fetch data", err);
+            }
         }
-      });
 
-      // Re-render status badge if we have data
-      if (lastKnownState) {
-        renderStateBadge(lastKnownState);
-      }
-    }
+        function showDashboard() {
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('dashboard-section').classList.remove('hidden');
+        }
 
-    // --- 2. CORE DASHBOARD LOGIC ---
-
-    const login = document.getElementById("login");
-    const dashboard = document.getElementById("dashboard");
-    const powerEl = document.getElementById("power");
-    const stateBadge = document.getElementById("stateBadge");
-
-    function renderStateBadge(apiState) {
-      lastKnownState = apiState; // Save for translation toggle
-      const texts = resources[currentLang];
-
-      // Logic to determine Color and Text based on API state
-      let displayState = "---";
-      let colorClass = "bg-slate-800 text-slate-400 border-slate-700";
-
-      if (apiState === "RUNNING") {
-        displayState = texts.state_running;
-        colorClass = "bg-green-500/10 text-green-400 border-green-500/50 shadow-[0_0_10px_rgba(34,197,94,0.2)]";
-      } else if (apiState === "STOPPED") {
-        displayState = texts.state_stopped;
-        colorClass = "bg-red-500/10 text-red-400 border-red-500/50";
-      } else {
-        displayState = texts.state_warning;
-        colorClass = "bg-yellow-500/10 text-yellow-400 border-yellow-500/50";
-      }
-
-      stateBadge.className = `px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border transition-all duration-300 ${colorClass}`;
-      stateBadge.textContent = displayState;
-    }
-
-    async function loadStatus() {
-      // Simulate fetch. In production, remove the try/catch mock.
-      try {
-        const res = await fetch("/.netlify/functions/status");
-        if (!res.ok) throw new Error("API Error");
-        const data = await res.json();
-        
-        powerEl.textContent = data.power_mw.toFixed(2);
-        renderStateBadge(data.state);
-      } catch (e) {
-        // Mock data for demonstration since API doesn't exist here
-        console.log("Using Mock Data");
-        const randomPower = (Math.random() * 100 + 500).toFixed(2);
-        powerEl.textContent = randomPower;
-        renderStateBadge("RUNNING");
-      }
-    }
-
-    function showDashboard() {
-      login.classList.add("hidden");
-      dashboard.classList.remove("hidden");
-      loadStatus();
-    }
-
-    function logout() {
-      netlifyIdentity.logout();
-    }
-
-    // --- 3. INIT ---
-    
-    netlifyIdentity.on("login", showDashboard);
-    netlifyIdentity.on("logout", () => {
-      dashboard.classList.add("hidden");
-      login.classList.remove("hidden");
-    });
-
-    if (netlifyIdentity.currentUser()) {
-      showDashboard();
-    }
-  </script>
-
+        function logout() {
+            sessionToken = null;
+            location.reload();
+        }
+    </script>
 </body>
 </html>
